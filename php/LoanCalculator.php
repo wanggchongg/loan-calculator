@@ -67,7 +67,7 @@ class LoanCalculator
             $yiHuanLiXi    = $yiHuanZongEr - $yiHuanBenJin;
 
             $repayment[] = [
-                self::QI_SHU         => $daiKuanQiShu - $shengYuQiShu + 1,
+                self::QI_SHU           => $daiKuanQiShu - $shengYuQiShu + 1,
                 self::YUE_GONG_ZONG_ER => round($yueGongZongEr, 2),
                 self::YUE_GONG_BEN_JIN => round($yueGongBenJin, 2),
                 self::YUE_GONG_LI_XI   => round($yueGongLiXi, 2),
@@ -272,7 +272,7 @@ class LoanCalculator
     {
         $outputFile = 'loan_calculator_' . date("YmdHis") . '.csv';
         $outputFp   = fopen($outputFile, 'w+');
-        fputs($outputFp, iconv('UTF-8', 'GBK', $this->toString()));
+        fputs($outputFp, iconv('UTF-8', 'GBK', $this->generateDetailToString()));
     }
 
     /**
