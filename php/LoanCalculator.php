@@ -178,6 +178,10 @@ class LoanCalculator
      */
     public function calculateMinTouZiLiLvFromDiffTwoWay($qiShuEnd)
     {
+        if ($qiShuEnd <= 0) {
+            $qiShuEnd = $this->daiKuanQiShu;
+        }
+
         $dengErBenXi  = $this->array2Map($this->calculateDengErBenXi(), self::QI_SHU);
         $dengErBenJin = $this->array2Map($this->calculateDengErBenJin(), self::QI_SHU);
 
@@ -207,11 +211,11 @@ class LoanCalculator
     }
 
     /**
-     * 转字符串
+     * 生产详情并转字符串
      *
      * @return string
      */
-    public function toString()
+    public function generateDetailToString()
     {
         $dengErBenXi  = $this->array2Map($this->calculateDengErBenXi(), self::QI_SHU);
         $dengErBenJin = $this->array2Map($this->calculateDengErBenJin(), self::QI_SHU);
@@ -262,9 +266,9 @@ class LoanCalculator
     }
 
     /**
-     * 转CSV文件
+     * 生产详情并输出CSV文件
      */
-    public function toCSV()
+    public function generateDetailToCSV()
     {
         $outputFile = 'loan_calculator_' . date("YmdHis") . '.csv';
         $outputFp   = fopen($outputFile, 'w+');
@@ -288,28 +292,4 @@ class LoanCalculator
 
         return $result;
     }
-}
-
-// usage:  php LoanCalculator.php --bj=1750000 --ll=0.0465 --qs=360 --cm=minTouZiLiLv --qse=120
-// bj=本金，ll=利率，qs=期数，cm=命令，qse=提前还款期数
-$argv = getopt('', ['bj:','ll:', 'qs:', 'cm:', 'qse:']);
-if (empty($argv['bj']) || empty($argv['ll']) || empty($argv['qs'])) {
-    echo 'lack of argv: ' . print_r($argv, true). PHP_EOL;
-    die();
-}
-
-$obj  = new LoanCalculator(intval($argv['bj']), floatval($argv['ll']), intval($argv['qs']));
-switch ($argv['cm']) {
-    case 'minTouZiLiLv':
-        echo $obj->calculateMinTouZiLiLvFromDiffTwoWay(intval($argv['qse'])) . PHP_EOL;
-        break;
-    case 'zongErQiShu':
-        echo $obj->calculateQiShuFromDiffYiHuanZongEr() . PHP_EOL;
-        break;
-    case 'benJinQiShu':
-        echo $obj->calculateQiShuFromDiffShengYuBenJin() . PHP_EOL;
-        break;
-    default:
-        echo $obj->toString() . PHP_EOL;
-        break;
 }
