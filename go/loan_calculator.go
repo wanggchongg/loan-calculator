@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"math"
+	"os"
 	"strings"
+	"time"
 )
 
 // 贷款计算器
@@ -106,7 +108,7 @@ func (loanCalculator *LoanCalculator) calculateDengErBenXi() Repayment {
 	return repayment
 }
 
-// 生产详情并转字符串
+// 生产详情并输出字符串
 func (loanCalculator *LoanCalculator) GenerateDetailToString() string {
 	dengErBenXi  := loanCalculator.calculateDengErBenXi()
 	dengErBenJin := loanCalculator.CalculateDengErBenJin()
@@ -159,6 +161,79 @@ func (loanCalculator *LoanCalculator) GenerateDetailToString() string {
 }
 
 // 生产详情并输出CSV文件
-func (loanCalculator *LoanCalculator) GenerateDetailToCSV()  {
+func (loanCalculator *LoanCalculator) GenerateDetailToCSV() int {
+	file, _ := os.OpenFile(
+		fmt.Sprintf("loan_calculator_%s.csv", time.Now().Format("20060102150405")),
+		os.O_WRONLY|os.O_TRUNC|os.O_CREATE,
+		0666,
+	)
+	defer file.Close()
 
+	nByte,_ := file.WriteString(loanCalculator.GenerateDetailToString())
+	return nByte
+}
+
+// 计算两种还款方式已还总额相等的期数
+func (loanCalculator *LoanCalculator) CalculateQiShuFromDiffYiHuanZongEr() int {
+	diffQiShu := 0
+	dengErBenXi  := loanCalculator.calculateDengErBenXi()
+	dengErBenJin := loanCalculator.CalculateDengErBenJin()
+
+	for i := 0; i < len(dengErBenXi); i++ {
+		if dengErBenXi[i].YiHuanZongEr >= dengErBenJin[i].YiHuanZongEr {
+			diffQiShu = dengErBenXi[i].QiShu
+			break
+		}
+	}
+
+	return diffQiShu
+}
+
+// 计算两种还款方式剩余本金相等的期数
+func (loanCalculator *LoanCalculator) calculateQiShuFromDiffShengYuBenJin() int {
+	diffQiShu := loanCalculator.DaiKuanQiShu
+	dengErBenXi  := loanCalculator.calculateDengErBenXi()
+	dengErBenJin := loanCalculator.CalculateDengErBenJin()
+
+	for i := 0; i < len(dengErBenXi); i++ {
+		if dengErBenXi[i].ShengYuBenJin < dengErBenJin[i].ShengYuBenJin {
+			diffQiShu = dengErBenXi[i].QiShu
+			break
+		}
+	}
+
+	return diffQiShu
+}
+
+// 计算最小投资回报利率
+func (loanCalculator *LoanCalculator) CalculateMinTouZiLiLvFromDiffTwoWay(qiShuEnd int) float64 {
+	if qiShuEnd <= 0 {
+		qiShuEnd = loanCalculator.DaiKuanQiShu
+	}
+
+	dengErBenXi  := loanCalculator.calculateDengErBenXi()
+	dengErBenJin := loanCalculator.CalculateDengErBenJin()
+
+	touZiNianLiLv := 0.15
+
+	for touZiNianLiLv > 0 {
+		touZiYueLiLv := touZiNianLiLv / 12
+		shouYiZongEr := float64(0)
+
+		qiShu := 0
+		for ; qiShu < qiShuEnd-1; qiShu++ {
+			duoHuanZongEr := dengErBenJin[qiShu].YiHuanZongEr - dengErBenXi[qiShu].YiHuanZongEr
+			shouYiYue     := duoHuanZongEr * touZiYueLiLv
+			shouYiZongEr  = shouYiZongEr + shouYiYue
+		}
+
+		duoHuanLiXi := dengErBenXi[qiShu].YiHuanLiXi - dengErBenJin[qiShuEnd-1].YiHuanLiXi
+		if shouYiZongEr < duoHuanLiXi {
+			break
+		}
+
+		touZiNianLiLv -= 0.0001
+	}
+
+	return touZiNianLiLv
 }
